@@ -1,14 +1,16 @@
 import { Box, Typography, TypographyProps, useTheme } from "@mui/material";
 import { blue, blueGrey, deepOrange, green, lightGreen, pink, purple, yellow } from "@mui/material/colors";
-import { ArcElement, Chart as ChartJS, Legend, Title, Tooltip } from "chart.js";
+import { ArcElement, Chart as ChartJS, ChartMeta, Legend, PluginOptionsByType, Title, Tooltip } from "chart.js";
+import { _DeepPartialObject } from "chart.js/dist/types/utils";
 import ChartDataLabels, { Context } from "chartjs-plugin-datalabels";
-import { get, isEmpty, keys, map, round, sortBy, sum, values } from "lodash";
+import { filter, get, includes, isEmpty, keys, map, rangeRight, round, sortBy, sum, values } from "lodash";
+import moment from "moment";
 import React, { useEffect } from "react";
 import { Pie } from "react-chartjs-2";
 import { useNavigate } from "react-router-dom";
-import { PlacementPrediction } from "../components/Statistics";
+import { LabeledNumberBox, PlacementPrediction } from "../components/Statistics";
 import { useAppStore, useStatistics, useStudentStore } from "../hooks";
-import { levels } from "../interfaces";
+import { Nationality, StatusDetails } from "../interfaces";
 import { getAllInitialSessions, sortObjectByValues } from "../services";
 
 ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels, Title);
@@ -42,19 +44,34 @@ export const StatisticsPage = () => {
     blueGrey[100],
   ];
 
-  const dataLabelsPlugin = {
-    datalabels: {
-      font: {
-        size: 16,
+  const pieChartPlugins = (title: string, noLabels?: boolean): _DeepPartialObject<PluginOptionsByType<"pie">> => {
+    return {
+      datalabels: {
+        font: {
+          weight: "bold",
+        },
+        formatter: (value: number, context: Context) => {
+          const label = get(context.chart.data.labels, context.dataIndex);
+          const { chart } = context;
+          const metaData: ChartMeta<"pie"> = chart.getDatasetMeta(0);
+          const { total } = metaData;
+          const percentage = (value * 100) / (total ?? 1);
+          return percentage > 3.5
+            ? `${noLabels ? "" : `${label}\n`}${((value * 100) / (total ?? 1)).toFixed(1)}%`
+            : "";
+        },
       },
-      formatter: (value: number, context: Context) => {
-        const { data } = context.chart.data.datasets[0];
-        const label = get(context.chart.data.labels, context.dataIndex);
-        const total = sum(data);
-        const percentage = (value * 100) / total;
-        return percentage > 2 ? `${label}\n${((value * 100) / total).toFixed(1)}%` : "";
+      legend: {
+        labels: {
+          color: theme.palette.text.primary,
+        },
       },
-    },
+      title: {
+        color: theme.palette.text.primary,
+        display: true,
+        text: title,
+      },
+    };
   };
 
   const totalWaitingListOutcomes =
@@ -65,137 +82,354 @@ export const StatisticsPage = () => {
   }, [navigate, statistics]);
 
   return statistics.totalRegistered && (role === "admin" || role === "faculty") ? (
-    <Box marginLeft="10%" paddingBottom={5}>
-      <Typography {...textProps}>
-        Active Students: {statistics.totalActive} (
-        {(round(statistics.totalActive / statistics.totalRegistered, 3) * 100 || 0).toFixed(1)}
-        %)
+    <Box paddingBottom={5}>
+      <Typography variant="h5" {...textProps} marginLeft="3%">
+        Program Numbers
       </Typography>
       <Box display="flex" flexDirection="row">
-        <Box width="50%">
+        <LabeledNumberBox color={colors[4]} label="Total Enrollment" number={statistics.totalEnrollment} />
+        <LabeledNumberBox color={colors[0]} label="Active Students" number={statistics.totalActive} />
+        <LabeledNumberBox color={colors[1]} label="Total Eligible" number={statistics.totalEligible} />
+        <LabeledNumberBox color={colors[2]} label="Total Registered" number={statistics.totalRegistered} />
+        <LabeledNumberBox color={colors[3]} label="Pending Enrollment" number={statistics.totalPending} />
+        <LabeledNumberBox
+          color={colors[5]}
+          label="New Students Next Session"
+          number={statistics.totalNewNextSession}
+        />
+      </Box>
+      <Typography variant="h5" {...textProps} marginLeft="3%">
+        Nationalities
+      </Typography>
+      <Box display="flex" flexDirection="row" marginTop="5px">
+        <Box width="33%">
           <Pie
             data={{
               datasets: [
                 {
                   backgroundColor: colors,
-                  data: values(statistics.activeNationalityCounts),
+                  data: [
+                    statistics.activeNationalityCounts[Nationality.JDN],
+                    statistics.activeNationalityCounts[Nationality.SYR],
+                    sum(values(statistics.activeNationalityCounts)) -
+                      statistics.activeNationalityCounts[Nationality.JDN] -
+                      statistics.activeNationalityCounts[Nationality.SYR] -
+                      (statistics.activeNationalityCounts[Nationality.UNKNWN] ?? 0),
+                    statistics.activeNationalityCounts[Nationality.UNKNWN],
+                  ],
                 },
               ],
-              labels: keys(statistics.activeNationalityCounts),
+              labels: [Nationality.JDN, Nationality.SYR, "Other", "Unknown"],
             }}
             options={{
-              plugins: {
-                legend: {
-                  position: "top",
-                },
-                title: {
-                  display: true,
-                  text: "Active Nationalities",
-                },
-                ...dataLabelsPlugin,
-              },
+              plugins: pieChartPlugins("Active Students by Nationality"),
             }}
           />
         </Box>
-        <Box width="50%">
+        <Box width="33%">
           <Pie
             data={{
               datasets: [
                 {
                   backgroundColor: colors,
-                  data: values(statistics.activeLevelCounts),
+                  data: [
+                    statistics.nationalityCounts[Nationality.JDN],
+                    statistics.nationalityCounts[Nationality.SYR],
+                    sum(values(statistics.nationalityCounts)) -
+                      statistics.nationalityCounts[Nationality.JDN] -
+                      statistics.nationalityCounts[Nationality.SYR] -
+                      (statistics.nationalityCounts[Nationality.UNKNWN] ?? 0),
+                    statistics.nationalityCounts[Nationality.UNKNWN],
+                  ],
                 },
               ],
-              labels: keys(statistics.activeLevelCounts),
+              labels: [Nationality.JDN, Nationality.SYR, "Other", "Unknown"],
             }}
             options={{
-              plugins: {
-                legend: {
-                  position: "top",
+              plugins: pieChartPlugins("All Students by Nationality"),
+            }}
+          />
+        </Box>
+        <Box width="33%" />
+      </Box>
+      <Typography variant="h5" {...textProps} marginLeft="3%">
+        Levels
+      </Typography>
+      <Box display="flex" flexDirection="row">
+        <Box width="33%" />
+        <Box width="33%">
+          <Pie
+            data={{
+              datasets: [
+                {
+                  backgroundColor: colors,
+                  data: map(
+                    sortBy(
+                      map(keys(statistics.activeLevelCounts), (key, i) => {
+                        return [key, values(statistics.activeLevelCounts)[i]];
+                      }),
+                      ([key]: [string]) => {
+                        return key === "PL1" ? "L0" : key;
+                      },
+                    ),
+                    ([, value]: [string, number]) => {
+                      return value;
+                    },
+                  ),
                 },
-                title: {
-                  display: true,
-                  text: "Active Levels",
+              ],
+              labels: sortBy(keys(statistics.activeLevelCounts), (level) => {
+                return level === "PL1" ? "L0" : level;
+              }),
+            }}
+            options={{
+              plugins: pieChartPlugins("Active Students by Level"),
+            }}
+          />
+        </Box>
+        <Box width="33%">
+          <Pie
+            data={{
+              datasets: [
+                {
+                  backgroundColor: colors,
+                  data: map(
+                    sortBy(
+                      map(keys(statistics.levelCounts), (key, i) => {
+                        return [key, values(statistics.levelCounts)[i]];
+                      }),
+                      ([key]: [string]) => {
+                        return key === "PL1" ? "L0" : key;
+                      },
+                    ),
+                    ([, value]: [string, number]) => {
+                      return value;
+                    },
+                  ),
                 },
-                ...dataLabelsPlugin,
-              },
+              ],
+              labels: sortBy(keys(statistics.levelCounts), (level) => {
+                return level === "PL1" ? "L0" : level;
+              }),
+            }}
+            options={{
+              plugins: pieChartPlugins("All Students by Level"),
             }}
           />
         </Box>
       </Box>
-      {/* {map([...levels, "L5 GRAD"], (key) => {
-        return (
-          <Typography {...textProps} key={`active-level-${key}`} marginLeft={INDENT}>
-            Active {key}: {get(statistics.activeLevelCounts, key)} (
-            {(round((get(statistics.activeLevelCounts, key) ?? 0) / statistics.totalActive, 3) * 100).toFixed(1)}%)
-          </Typography>
-        );
-      })} */}
-      <Typography {...textProps} fontWeight="bold">
-        Active Students by Gender
-      </Typography>
-      <Typography {...textProps} marginLeft={INDENT}>
-        Active Male: {get(statistics.activeGenderCounts, "M")} (
-        {(round((get(statistics.activeGenderCounts, "M") ?? 0) / statistics.totalActive, 2) * 100).toFixed(0)}%)
-      </Typography>
-      <Typography {...textProps} marginLeft={INDENT}>
-        Active Female: {get(statistics.activeGenderCounts, "F")} (
-        {(round((get(statistics.activeGenderCounts, "F") ?? 0) / statistics.totalActive, 2) * 100).toFixed(0)}%)
-      </Typography>
-      <Typography {...textProps}>Current Pending Enrollment: {statistics.totalPending}</Typography>
-      <Typography {...textProps}>Total Eligible for Next Session: {statistics.totalEligible}</Typography>
-      <Typography {...textProps}>Total on No Contact List: {statistics.totalNCL}</Typography>
-      <Typography {...textProps}>Total Registered: {statistics.totalRegistered}</Typography>
-      <Typography {...textProps} fontWeight="bold">
+      <Typography variant="h5" {...textProps} marginLeft="3%">
         Gender
       </Typography>
-      <Typography {...textProps} marginLeft={INDENT}>
-        Total Male: {get(statistics.genderCounts, "M")}
+      <Box display="flex" flexDirection="row">
+        <Box width="33%">
+          <Pie
+            data={{
+              datasets: [
+                {
+                  backgroundColor: colors,
+                  data: [statistics.activeGenderCounts.M, statistics.activeGenderCounts.F],
+                },
+              ],
+              labels: ["M", "F"],
+            }}
+            options={{
+              plugins: pieChartPlugins("Active Students by Gender"),
+            }}
+          />
+        </Box>
+        <Box width="33%">
+          <Pie
+            data={{
+              datasets: [
+                {
+                  backgroundColor: colors,
+                  data: [statistics.genderCounts.M, statistics.genderCounts.F],
+                },
+              ],
+              labels: ["M", "F"],
+            }}
+            options={{
+              plugins: pieChartPlugins("All Students by Gender"),
+            }}
+          />
+        </Box>
+        <Box width="33%" />
+      </Box>
+      <Typography variant="h5" {...textProps} marginLeft="3%">
+        Sessions Completed
       </Typography>
-      <Typography {...textProps} marginLeft={INDENT}>
-        Total Female: {get(statistics.genderCounts, "F")}
+      <Box display="flex" flexDirection="row">
+        <Box width="33%" />
+
+        <Box width="33%">
+          <Pie
+            data={{
+              datasets: [
+                {
+                  backgroundColor: colors,
+                  data: [
+                    statistics.activeSessionsAttendedCounts["0"],
+                    statistics.activeSessionsAttendedCounts["1"],
+                    statistics.activeSessionsAttendedCounts["2"],
+                    sum(values(statistics.activeSessionsAttendedCounts)) -
+                      statistics.activeSessionsAttendedCounts["0"] -
+                      statistics.activeSessionsAttendedCounts["1"] -
+                      statistics.activeSessionsAttendedCounts["2"],
+                  ],
+                },
+              ],
+              labels: ["0 sessions", "1 session", "2 sessions", "3+ sessions"],
+            }}
+            options={{
+              plugins: pieChartPlugins("Active Students by Number of Sessions Completed"),
+            }}
+          />
+        </Box>
+        <Box width="33%">
+          <Pie
+            data={{
+              datasets: [
+                {
+                  backgroundColor: colors,
+                  data: [
+                    statistics.sessionsAttendedCounts["0"],
+                    statistics.sessionsAttendedCounts["1"],
+                    statistics.sessionsAttendedCounts["2"],
+                    sum(values(statistics.sessionsAttendedCounts)) -
+                      statistics.sessionsAttendedCounts["0"] -
+                      statistics.sessionsAttendedCounts["1"] -
+                      statistics.sessionsAttendedCounts["2"],
+                  ],
+                },
+              ],
+              labels: ["0 sessions", "1 session", "2 sessions", "3+ sessions"],
+            }}
+            options={{
+              plugins: pieChartPlugins("All Students by Number of Sessions Completed"),
+            }}
+          />
+        </Box>
+      </Box>
+      <Typography variant="h5" {...textProps} marginLeft="3%">
+        Active Student Status
       </Typography>
-      <Typography {...textProps} fontWeight="bold">
-        Total Nationalities
+      <Box display="flex" flexDirection="row">
+        <Box width="33%">
+          <Pie
+            data={{
+              datasets: [
+                {
+                  backgroundColor: colors,
+                  data: [statistics.activeStatusCounts.RET, statistics.activeStatusCounts.NEW],
+                },
+              ],
+              labels: ["RET", "NEW"],
+            }}
+            options={{
+              plugins: pieChartPlugins("Active Students by Status"),
+            }}
+          />
+        </Box>
+        <Box width="33%">
+          <Pie
+            data={{
+              datasets: [
+                {
+                  backgroundColor: [colors[0], colors[2], colors[3], colors[4], colors[1]],
+                  data: map(
+                    filter(
+                      [
+                        StatusDetails.SE,
+                        StatusDetails.SKIP,
+                        StatusDetails.RETWD,
+                        StatusDetails.NEWWD,
+                        StatusDetails.SES1,
+                      ],
+                      (statusDetail) => {
+                        return includes(keys(statistics.activeStatusDetailsCounts), statusDetail);
+                      },
+                    ),
+                    (statusDetail) => {
+                      return get(statistics.activeStatusDetailsCounts, statusDetail);
+                    },
+                  ),
+                },
+              ],
+              labels: filter(
+                [
+                  StatusDetails.SE,
+                  StatusDetails.SKIP,
+                  StatusDetails.RETWD,
+                  StatusDetails.NEWWD,
+                  StatusDetails.SES1,
+                ],
+                (statusDetail) => {
+                  return includes(keys(statistics.activeStatusDetailsCounts), statusDetail);
+                },
+              ),
+            }}
+            options={{
+              plugins: pieChartPlugins("Active Students by Status Details", true),
+            }}
+          />
+        </Box>
+        <Box width="33%" />
+      </Box>
+      <Typography variant="h5" {...textProps} marginLeft="3%">
+        Placement Levels and Initial Sessions
       </Typography>
-      {map(keys(sortObjectByValues(statistics.nationalityCounts)).reverse(), (key) => {
-        return (
-          <Typography {...textProps} key={`nationality-${key}`} marginLeft={INDENT}>
-            Total {key}: {get(statistics.nationalityCounts, key)}
-          </Typography>
-        );
-      })}
-      <Typography {...textProps} fontWeight="bold">
-        Total Levels
-      </Typography>
-      {map([...levels, "L5 GRAD"], (key) => {
-        return (
-          <Typography {...textProps} key={`level-${key}`} marginLeft={INDENT}>
-            Total {key}: {get(statistics.levelCounts, key)}
-          </Typography>
-        );
-      })}
-      <Typography {...textProps} fontWeight="bold">
-        Statuses
-      </Typography>
-      {map(keys(sortObjectByValues(statistics.statusCounts)).reverse(), (key) => {
-        return (
-          <Typography {...textProps} key={`status-${key}`} marginLeft={INDENT}>
-            {key}: {get(statistics.statusCounts, key)}
-          </Typography>
-        );
-      })}
-      <Typography {...textProps} fontWeight="bold">
-        Status Details
-      </Typography>
-      {map(sortBy(keys(statistics.statusDetailsCounts)), (key) => {
-        return (
-          <Typography {...textProps} key={`status-details-${key}`} marginLeft={INDENT}>
-            {key}: {get(statistics.statusDetailsCounts, key)} (
-            {(round(get(statistics.statusDetailsCounts, key) / students.length, 2) * 100).toFixed(0)}%)
-          </Typography>
-        );
-      })}
+      <Box display="flex" flexDirection="row">
+        <Box width="33%" />
+        <Box width="33%">
+          <Pie
+            data={{
+              datasets: [
+                {
+                  backgroundColor: colors,
+                  data: map(
+                    sortBy(
+                      map(keys(statistics.placementLevelCounts), (key, i) => {
+                        return [key, values(statistics.placementLevelCounts)[i]];
+                      }),
+                      ([key]: [string]) => {
+                        return key === "PL1" ? "L0" : key;
+                      },
+                    ),
+                    ([, value]: [string, number]) => {
+                      return value;
+                    },
+                  ),
+                },
+              ],
+              labels: sortBy(keys(statistics.placementLevelCounts), (level) => {
+                return level === "PL1" ? "L0" : level;
+              }),
+            }}
+            options={{
+              plugins: pieChartPlugins("Original Placement Levels"),
+            }}
+          />
+        </Box>
+        <Box width="33%">
+          <Pie
+            data={{
+              datasets: [
+                {
+                  backgroundColor: colors,
+                  data: map(rangeRight(2017, moment().year() + 1), (year) => {
+                    return get(statistics.activeInitialYearCounts, year.toString());
+                  }),
+                },
+              ],
+              labels: rangeRight(2017, moment().year() + 1),
+            }}
+            options={{
+              plugins: pieChartPlugins("Active Students by Initial Year"),
+            }}
+          />
+        </Box>
+      </Box>
       <Typography {...textProps} fontWeight="bold">
         Initial Sessions
       </Typography>
@@ -232,23 +466,6 @@ export const StatisticsPage = () => {
               );
             })}
           </>
-        );
-      })}
-      <Typography {...textProps} fontWeight="bold">
-        COVID Statistics
-      </Typography>
-      {map(keys(sortObjectByValues(statistics.covidStatusCounts)).reverse(), (key) => {
-        return (
-          <Typography {...textProps} key={`covid-status-${key}`} marginLeft={INDENT}>
-            {key}: {get(statistics.covidStatusCounts, key)}
-          </Typography>
-        );
-      })}
-      {map(keys(sortObjectByValues(statistics.fullVaccineNationalityCounts)).reverse(), (key) => {
-        return (
-          <Typography {...textProps} key={`full-vaccine-nationality-${key}`} marginLeft={INDENT}>
-            {key} Fully Vaccinated: {get(statistics.fullVaccineNationalityCounts, key)}
-          </Typography>
         );
       })}
       <Typography {...textProps} fontWeight="bold">
