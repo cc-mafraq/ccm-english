@@ -1,19 +1,43 @@
 import { Box, Typography, TypographyProps, useTheme } from "@mui/material";
 import { blue, blueGrey, deepOrange, green, lightGreen, pink, purple, yellow } from "@mui/material/colors";
-import { ArcElement, Chart as ChartJS, ChartMeta, Legend, PluginOptionsByType, Title, Tooltip } from "chart.js";
+import {
+  ArcElement,
+  BarElement,
+  CategoryScale,
+  Chart as ChartJS,
+  ChartMeta,
+  Legend,
+  LinearScale,
+  PluginOptionsByType,
+  Title,
+  Tooltip,
+} from "chart.js";
 import { _DeepPartialObject } from "chart.js/dist/types/utils";
 import ChartDataLabels, { Context } from "chartjs-plugin-datalabels";
-import { filter, get, includes, isEmpty, keys, map, rangeRight, round, sortBy, sum, values } from "lodash";
+import {
+  filter,
+  get,
+  includes,
+  isEmpty,
+  keys,
+  map,
+  rangeRight,
+  round,
+  sortBy,
+  sum,
+  toString,
+  values,
+} from "lodash";
 import moment from "moment";
-import React, { useEffect } from "react";
-import { Pie } from "react-chartjs-2";
+import React, { useEffect, useMemo } from "react";
+import { Bar, Pie } from "react-chartjs-2";
 import { useNavigate } from "react-router-dom";
 import { LabeledNumberBox, PlacementPrediction } from "../components/Statistics";
 import { useAppStore, useStatistics, useStudentStore } from "../hooks";
-import { Nationality, StatusDetails } from "../interfaces";
+import { genderedLevels, Nationality, StatusDetails } from "../interfaces";
 import { getAllInitialSessions, sortObjectByValues } from "../services";
 
-ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels, Title);
+ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels, Title, CategoryScale, LinearScale, BarElement);
 
 const INDENT = 3;
 
@@ -44,7 +68,10 @@ export const StatisticsPage = () => {
     blueGrey[100],
   ];
 
-  const pieChartPlugins = (title: string, noLabels?: boolean): _DeepPartialObject<PluginOptionsByType<"pie">> => {
+  const chartPlugins = (
+    title: string,
+    noLabels?: boolean,
+  ): _DeepPartialObject<PluginOptionsByType<"pie" | "bar">> => {
     return {
       datalabels: {
         font: {
@@ -56,9 +83,7 @@ export const StatisticsPage = () => {
           const metaData: ChartMeta<"pie"> = chart.getDatasetMeta(0);
           const { total } = metaData;
           const percentage = (value * 100) / (total ?? 1);
-          return percentage > 3.5
-            ? `${noLabels ? "" : `${label}\n`}${((value * 100) / (total ?? 1)).toFixed(1)}%`
-            : "";
+          return percentage > 3.5 ? `${noLabels ? "" : `${label}\n`}${percentage.toFixed(1)}%` : "";
         },
       },
       legend: {
@@ -77,16 +102,17 @@ export const StatisticsPage = () => {
   const totalWaitingListOutcomes =
     sum(values(statistics.waitingListOutcomeCounts)) - (statistics.waitingListOutcomeCounts.undefined ?? 0);
 
+  const initialSessions = useMemo(() => {
+    return getAllInitialSessions(students);
+  }, [students]);
+
   useEffect(() => {
     if (!statistics.totalRegistered) navigate("/epd", { replace: true });
   }, [navigate, statistics]);
 
   return statistics.totalRegistered && (role === "admin" || role === "faculty") ? (
     <Box paddingBottom={5}>
-      <Typography variant="h5" {...textProps} marginLeft="3%">
-        Program Numbers
-      </Typography>
-      <Box display="flex" flexDirection="row">
+      <Box display="flex" flexDirection="row" flexWrap="wrap">
         <LabeledNumberBox color={colors[4]} label="Total Enrollment" number={statistics.totalEnrollment} />
         <LabeledNumberBox color={colors[0]} label="Active Students" number={statistics.totalActive} />
         <LabeledNumberBox color={colors[1]} label="Total Eligible" number={statistics.totalEligible} />
@@ -102,7 +128,7 @@ export const StatisticsPage = () => {
         Nationalities
       </Typography>
       <Box display="flex" flexDirection="row" marginTop="5px">
-        <Box width="33%">
+        <Box width="500px">
           <Pie
             data={{
               datasets: [
@@ -122,11 +148,11 @@ export const StatisticsPage = () => {
               labels: [Nationality.JDN, Nationality.SYR, "Other", "Unknown"],
             }}
             options={{
-              plugins: pieChartPlugins("Active Students by Nationality"),
+              plugins: chartPlugins("Active Students by Nationality"),
             }}
           />
         </Box>
-        <Box width="33%">
+        <Box width="500px">
           <Pie
             data={{
               datasets: [
@@ -146,18 +172,16 @@ export const StatisticsPage = () => {
               labels: [Nationality.JDN, Nationality.SYR, "Other", "Unknown"],
             }}
             options={{
-              plugins: pieChartPlugins("All Students by Nationality"),
+              plugins: chartPlugins("All Students by Nationality"),
             }}
           />
         </Box>
-        <Box width="33%" />
       </Box>
       <Typography variant="h5" {...textProps} marginLeft="3%">
         Levels
       </Typography>
       <Box display="flex" flexDirection="row">
-        <Box width="33%" />
-        <Box width="33%">
+        <Box width="500px">
           <Pie
             data={{
               datasets: [
@@ -183,11 +207,11 @@ export const StatisticsPage = () => {
               }),
             }}
             options={{
-              plugins: pieChartPlugins("Active Students by Level"),
+              plugins: chartPlugins("Active Students by Level"),
             }}
           />
         </Box>
-        <Box width="33%">
+        <Box width="500px">
           <Pie
             data={{
               datasets: [
@@ -213,7 +237,7 @@ export const StatisticsPage = () => {
               }),
             }}
             options={{
-              plugins: pieChartPlugins("All Students by Level"),
+              plugins: chartPlugins("All Students by Level"),
             }}
           />
         </Box>
@@ -222,7 +246,7 @@ export const StatisticsPage = () => {
         Gender
       </Typography>
       <Box display="flex" flexDirection="row">
-        <Box width="33%">
+        <Box width="500px">
           <Pie
             data={{
               datasets: [
@@ -234,11 +258,11 @@ export const StatisticsPage = () => {
               labels: ["M", "F"],
             }}
             options={{
-              plugins: pieChartPlugins("Active Students by Gender"),
+              plugins: chartPlugins("Active Students by Gender"),
             }}
           />
         </Box>
-        <Box width="33%">
+        <Box width="500px">
           <Pie
             data={{
               datasets: [
@@ -250,19 +274,16 @@ export const StatisticsPage = () => {
               labels: ["M", "F"],
             }}
             options={{
-              plugins: pieChartPlugins("All Students by Gender"),
+              plugins: chartPlugins("All Students by Gender"),
             }}
           />
         </Box>
-        <Box width="33%" />
       </Box>
       <Typography variant="h5" {...textProps} marginLeft="3%">
         Sessions Completed
       </Typography>
       <Box display="flex" flexDirection="row">
-        <Box width="33%" />
-
-        <Box width="33%">
+        <Box width="500px">
           <Pie
             data={{
               datasets: [
@@ -282,11 +303,11 @@ export const StatisticsPage = () => {
               labels: ["0 sessions", "1 session", "2 sessions", "3+ sessions"],
             }}
             options={{
-              plugins: pieChartPlugins("Active Students by Number of Sessions Completed"),
+              plugins: chartPlugins("Active Students by Number of Sessions Completed"),
             }}
           />
         </Box>
-        <Box width="33%">
+        <Box width="500px">
           <Pie
             data={{
               datasets: [
@@ -306,7 +327,7 @@ export const StatisticsPage = () => {
               labels: ["0 sessions", "1 session", "2 sessions", "3+ sessions"],
             }}
             options={{
-              plugins: pieChartPlugins("All Students by Number of Sessions Completed"),
+              plugins: chartPlugins("All Students by Number of Sessions Completed"),
             }}
           />
         </Box>
@@ -315,7 +336,7 @@ export const StatisticsPage = () => {
         Active Student Status
       </Typography>
       <Box display="flex" flexDirection="row">
-        <Box width="33%">
+        <Box width="500px">
           <Pie
             data={{
               datasets: [
@@ -327,11 +348,11 @@ export const StatisticsPage = () => {
               labels: ["RET", "NEW"],
             }}
             options={{
-              plugins: pieChartPlugins("Active Students by Status"),
+              plugins: chartPlugins("Active Students by Status"),
             }}
           />
         </Box>
-        <Box width="33%">
+        <Box width="550px">
           <Pie
             data={{
               datasets: [
@@ -370,47 +391,15 @@ export const StatisticsPage = () => {
               ),
             }}
             options={{
-              plugins: pieChartPlugins("Active Students by Status Details", true),
+              plugins: chartPlugins("Active Students by Status Details", true),
             }}
           />
         </Box>
-        <Box width="33%" />
       </Box>
       <Typography variant="h5" {...textProps} marginLeft="3%">
-        Placement Levels and Initial Sessions
+        Initial Sessions
       </Typography>
       <Box display="flex" flexDirection="row">
-        <Box width="33%" />
-        <Box width="33%">
-          <Pie
-            data={{
-              datasets: [
-                {
-                  backgroundColor: colors,
-                  data: map(
-                    sortBy(
-                      map(keys(statistics.placementLevelCounts), (key, i) => {
-                        return [key, values(statistics.placementLevelCounts)[i]];
-                      }),
-                      ([key]: [string]) => {
-                        return key === "PL1" ? "L0" : key;
-                      },
-                    ),
-                    ([, value]: [string, number]) => {
-                      return value;
-                    },
-                  ),
-                },
-              ],
-              labels: sortBy(keys(statistics.placementLevelCounts), (level) => {
-                return level === "PL1" ? "L0" : level;
-              }),
-            }}
-            options={{
-              plugins: pieChartPlugins("Original Placement Levels"),
-            }}
-          />
-        </Box>
         <Box width="33%">
           <Pie
             data={{
@@ -425,21 +414,170 @@ export const StatisticsPage = () => {
               labels: rangeRight(2017, moment().year() + 1),
             }}
             options={{
-              plugins: pieChartPlugins("Active Students by Initial Year"),
+              plugins: chartPlugins("Active Students by Initial Year"),
+            }}
+          />
+        </Box>
+        <Box width="67%">
+          <Bar
+            data={{
+              datasets: [
+                {
+                  backgroundColor: colors,
+                  data: map(initialSessions, (session) => {
+                    return get(statistics.sessionCounts, session);
+                  }),
+                },
+              ],
+              labels: initialSessions,
+            }}
+            options={{
+              plugins: {
+                datalabels: {
+                  font: {
+                    weight: "bold",
+                  },
+                },
+                legend: {
+                  display: false,
+                },
+                title: {
+                  color: theme.palette.text.primary,
+                  display: true,
+                  text: "Initial Sessions",
+                },
+              },
             }}
           />
         </Box>
       </Box>
-      <Typography {...textProps} fontWeight="bold">
-        Initial Sessions
+      <Typography variant="h5" {...textProps} marginLeft="3%">
+        Overall Results
       </Typography>
-      {map(getAllInitialSessions(students), (key) => {
-        return (
-          <Typography {...textProps} key={`session-${key}`} marginLeft={INDENT}>
-            {key}: {get(statistics.sessionCounts, key)}
-          </Typography>
-        );
-      })}
+      <Box display="flex" flexDirection="row" flexWrap="wrap">
+        <Box width="33%">
+          <Pie
+            data={{
+              datasets: [
+                {
+                  backgroundColor: colors,
+                  data: [
+                    statistics.overallResultCounts.P,
+                    statistics.overallResultCounts.F,
+                    statistics.overallResultCounts.WD,
+                  ],
+                },
+              ],
+              labels: ["Pass", "Fail", "Withdraw"],
+            }}
+            options={{
+              plugins: chartPlugins("All Overall Results"),
+            }}
+          />
+        </Box>
+        <Box width="67%">
+          <Bar
+            data={{
+              datasets: [
+                {
+                  backgroundColor: colors[0],
+                  data: map(genderedLevels, (level) => {
+                    return get(statistics.overallResultCountsByLevel, `${level}.P`);
+                  }),
+                  label: "Pass",
+                  stack: "overallResults",
+                },
+                {
+                  backgroundColor: colors[1],
+                  data: map(genderedLevels, (level) => {
+                    return get(statistics.overallResultCountsByLevel, `${level}.F`);
+                  }),
+                  label: "Fail",
+                  stack: "overallResults",
+                },
+                {
+                  backgroundColor: colors[2],
+                  data: map(genderedLevels, (level) => {
+                    return get(statistics.overallResultCountsByLevel, `${level}.WD`);
+                  }),
+                  label: "Withdraw",
+                  stack: "overallResults",
+                },
+              ],
+              labels: genderedLevels,
+            }}
+            options={{
+              plugins: {
+                datalabels: {
+                  font: {
+                    weight: "bold",
+                  },
+                  formatter: (value: number, context: Context) => {
+                    const label = get(context.chart.data.labels, context.dataIndex);
+                    const passDatasetIsHidden = context.chart.getDatasetMeta(0)?.hidden;
+                    const failDatasetIsHidden = context.chart.getDatasetMeta(1)?.hidden;
+                    const withdrawDatasetIsHidden = context.chart.getDatasetMeta(2)?.hidden;
+                    const passValue = passDatasetIsHidden
+                      ? 0
+                      : Number(get(statistics.overallResultCountsByLevel, `${toString(label)}.P`));
+                    const failValue = failDatasetIsHidden
+                      ? 0
+                      : Number(get(statistics.overallResultCountsByLevel, `${toString(label)}.F`));
+                    const withdrawValue = withdrawDatasetIsHidden
+                      ? 0
+                      : Number(get(statistics.overallResultCountsByLevel, `${toString(label)}.WD`));
+                    const percentage = (value * 100) / (passValue + failValue + withdrawValue);
+                    return `${percentage.toFixed(0)}%`;
+                  },
+                },
+                legend: {
+                  labels: {
+                    color: theme.palette.text.primary,
+                  },
+                },
+                title: {
+                  color: theme.palette.text.primary,
+                  display: true,
+                  text: "Overall Results by Level",
+                },
+              },
+            }}
+          />
+        </Box>
+      </Box>
+      <Typography variant="h5" {...textProps} marginLeft="3%">
+        Original Placement Levels
+      </Typography>
+      <Box width="500px">
+        <Pie
+          data={{
+            datasets: [
+              {
+                backgroundColor: colors,
+                data: map(
+                  sortBy(
+                    map(keys(statistics.placementLevelCounts), (key, i) => {
+                      return [key, values(statistics.placementLevelCounts)[i]];
+                    }),
+                    ([key]: [string]) => {
+                      return key === "PL1" ? "L0" : key;
+                    },
+                  ),
+                  ([, value]: [string, number]) => {
+                    return value;
+                  },
+                ),
+              },
+            ],
+            labels: sortBy(keys(statistics.placementLevelCounts), (level) => {
+              return level === "PL1" ? "L0" : level;
+            }),
+          }}
+          options={{
+            plugins: chartPlugins("Original Placement Levels"),
+          }}
+        />
+      </Box>
       <Typography {...textProps} fontWeight="bold">
         Placement Registration Rates by Status
       </Typography>
@@ -468,23 +606,51 @@ export const StatisticsPage = () => {
           </>
         );
       })}
-      <Typography {...textProps} fontWeight="bold">
-        Withdraw Reasons
-      </Typography>
-      {map(keys(sortObjectByValues(statistics.droppedOutReasonCounts)).reverse(), (key) => {
-        return (
-          <Typography {...textProps} key={`withdraw-reason-${key}`} marginLeft={INDENT}>
-            {key}: {get(statistics.droppedOutReasonCounts, key)}
-          </Typography>
-        );
-      })}
-      <Typography {...textProps}>
-        Average Age at Program Entry: {round(statistics.averageAge, 1).toFixed(1)}
-      </Typography>
-      <Typography {...textProps}>Total Teachers: {statistics.totalTeachers}</Typography>
-      <Typography {...textProps}>Total English Teachers: {statistics.totalEnglishTeachers}</Typography>
-      <Typography {...textProps}>Total Illiterate Arabic: {statistics.totalIlliterateArabic}</Typography>
-      <Typography {...textProps}>Total Illiterate English: {statistics.totalIlliterateEnglish}</Typography>
+      <Box width="67%">
+        <Bar
+          data={{
+            datasets: [
+              {
+                backgroundColor: colors,
+                data: values(statistics.droppedOutReasonCounts),
+              },
+            ],
+            labels: keys(statistics.droppedOutReasonCounts),
+          }}
+          options={{
+            plugins: {
+              datalabels: {
+                font: {
+                  weight: "bold",
+                },
+              },
+              legend: {
+                display: false,
+              },
+              title: {
+                color: theme.palette.text.primary,
+                display: true,
+                text: "Withdraw Reasons",
+              },
+            },
+          }}
+        />
+      </Box>
+      <Box display="flex" flexDirection="row" flexWrap="wrap">
+        <LabeledNumberBox
+          color={colors[4]}
+          label="Average Age at Program Entry"
+          number={Number(round(statistics.averageAge, 1).toFixed(1))}
+        />
+        <LabeledNumberBox color={colors[0]} label="Teachers" number={statistics.totalTeachers} />
+        <LabeledNumberBox color={colors[1]} label="English Teachers" number={statistics.totalEnglishTeachers} />
+        <LabeledNumberBox color={colors[2]} label="Illiterate Arabic" number={statistics.totalIlliterateArabic} />
+        <LabeledNumberBox
+          color={colors[3]}
+          label="Illiterate English"
+          number={statistics.totalIlliterateEnglish}
+        />
+      </Box>
       <PlacementPrediction INDENT={INDENT} textProps={textProps} />
       <Typography {...textProps} fontWeight="bold">
         Waiting List Outcomes

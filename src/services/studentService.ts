@@ -31,7 +31,6 @@ import {
 import {
   AcademicRecord,
   FinalResult,
-  GenderedLevel,
   Level,
   SectionPlacement,
   Status,
@@ -84,7 +83,7 @@ export const getProgress = (student: Student, sessionOptions: string[]): Student
   // eslint-disable-next-line sort-keys-fix/sort-keys-fix
   const progress: StudentProgress = { PL1: [], L1: [], L2: [], L3: [], L4: [], L5: [], "L5 GRAD": [] };
   forEach(student.academicRecords, (ar) => {
-    let level: GenderedLevel;
+    let level: Level;
     if (!ar.level && !ar.levelAudited) return;
     switch (ar.level) {
       case "PL1-M":

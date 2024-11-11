@@ -1,10 +1,25 @@
-import { countBy, Dictionary, filter, forEach, get, includes, join, last, map, omit, set, slice } from "lodash";
+import {
+  countBy,
+  Dictionary,
+  filter,
+  flatMap,
+  forEach,
+  includes,
+  join,
+  last,
+  map,
+  omit,
+  reduce,
+  slice,
+} from "lodash";
 import { useCallback, useMemo } from "react";
 import {
   AcademicRecord,
   CovidStatus,
   DroppedOutReason,
+  FinalResult,
   GenderedLevel,
+  genderedLevels,
   Level,
   Nationality,
   Status,
@@ -37,6 +52,12 @@ interface Statistics {
   genderCounts: { [key in Student["gender"]]: number };
   levelCounts: { [key in Level]: number };
   nationalityCounts: { [key in Nationality]: number };
+  overallResultCounts: { [key in FinalResult]: number };
+  overallResultCountsByLevel: {
+    [key1 in GenderedLevel]: {
+      [key2 in FinalResult]: number;
+    };
+  };
   placementLevelCounts: { [key in Level]: number };
   placementRegistrationCounts: {
     inviteCounts: { [key in StudentStatus["currentStatus"]]: number };
@@ -60,16 +81,15 @@ interface Statistics {
   waitingListOutcomeCounts: { [key in WaitlistOutcome | "undefined"]: number };
 }
 
-const getLevelCounts = (statistics: Statistics, path: string) => {
-  set(
-    statistics,
-    `${path}.PL1`,
-    (get(statistics, `${path}.PL1-M`) || 0) + (get(statistics, `${path}.PL1-W`) || 0),
-  );
-  set(statistics, `${path}.L1`, (get(statistics, `${path}.L1-M`) || 0) + (get(statistics, `${path}.L1-W`) || 0));
-  set(statistics, `${path}.L2`, (get(statistics, `${path}.L2-M`) || 0) + (get(statistics, `${path}.L2-W`) || 0));
-  return omit(get(statistics, path), ["PL1-M", "PL1-W", "L1-M", "L1-W", "L2-M", "L2-W", ""]) as {
-    [key in Level]: number;
+const getLevelCounts = (genderedLevelCounts: { [key in GenderedLevel]: number }) => {
+  return {
+    L1: genderedLevelCounts["L1-M"] + genderedLevelCounts["L1-W"],
+    L2: genderedLevelCounts["L2-M"] + genderedLevelCounts["L2-W"],
+    L3: genderedLevelCounts.L3,
+    L4: genderedLevelCounts.L4,
+    L5: genderedLevelCounts.L5,
+    "L5 GRAD": genderedLevelCounts["L5 GRAD"],
+    PL1: genderedLevelCounts["PL1-M"] + genderedLevelCounts["PL1-W"],
   };
 };
 
@@ -88,6 +108,10 @@ export const useStatistics = (): Statistics => {
     });
   }, [currentSession, students]);
 
+  const allAcademicRecords = useMemo(() => {
+    return flatMap(students, "academicRecords");
+  }, [students]);
+
   const filterFullVaccine = useCallback(() => {
     return filter(students, (s) => {
       return s.covidVaccine.status === CovidStatus.FULL;
@@ -105,7 +129,9 @@ export const useStatistics = (): Statistics => {
     ) as {
       [key in Student["initialSession"]]: number;
     },
-    activeLevelCounts: countBy(activeStudents, "currentLevel") as { [key in GenderedLevel]: number },
+    activeLevelCounts: getLevelCounts(
+      countBy(activeStudents, "currentLevel") as { [key in GenderedLevel]: number },
+    ),
     activeNationalityCounts: countBy(activeStudents, "nationality") as { [key in Nationality]: number },
     activeSessionsAttendedCounts: countBy(
       map(activeStudents, (student) => {
@@ -127,8 +153,35 @@ export const useStatistics = (): Statistics => {
       [key in Nationality]: number;
     },
     genderCounts: countBy(students, "gender") as { [key in Student["gender"]]: number },
-    levelCounts: countBy(students, "currentLevel") as { [key in GenderedLevel]: number },
+    levelCounts: getLevelCounts(countBy(students, "currentLevel") as { [key in GenderedLevel]: number }),
     nationalityCounts: countBy(students, "nationality") as { [key in Nationality]: number },
+    overallResultCounts: countBy(allAcademicRecords, "overallResult") as {
+      [key in FinalResult]: number;
+    },
+    overallResultCountsByLevel: reduce(
+      genderedLevels,
+      (prevObject, genderedLevel) => {
+        prevObject[genderedLevel] = countBy(
+          filter(allAcademicRecords, (ar) => {
+            return ar.level === genderedLevel;
+          }),
+          "overallResult",
+        ) as { [key in FinalResult]: number };
+        return prevObject;
+      },
+      {
+        "L1-M": { F: 0, P: 0, WD: 0 },
+        "L1-W": { F: 0, P: 0, WD: 0 },
+        "L2-M": { F: 0, P: 0, WD: 0 },
+        "L2-W": { F: 0, P: 0, WD: 0 },
+        L3: { F: 0, P: 0, WD: 0 },
+        L4: { F: 0, P: 0, WD: 0 },
+        L5: { F: 0, P: 0, WD: 0 },
+        "L5 GRAD": { F: 0, P: 0, WD: 0 },
+        "PL1-M": { F: 0, P: 0, WD: 0 },
+        "PL1-W": { F: 0, P: 0, WD: 0 },
+      },
+    ),
     placementLevelCounts: countBy(students, "origPlacementData.level") as { [key in Level]: number },
     placementRegistrationCounts: getPlacementRegistrationCounts(students),
     sessionCounts: omit(countBy(students, "initialSession"), "") as {
@@ -182,7 +235,5 @@ export const useStatistics = (): Statistics => {
   statistics.averageAge /= numStudentsWithAge;
 
   statistics.totalRegistered = students.length;
-  statistics.activeLevelCounts = getLevelCounts(statistics, "activeLevelCounts");
-  statistics.levelCounts = getLevelCounts(statistics, "levelCounts");
   return statistics;
 };
