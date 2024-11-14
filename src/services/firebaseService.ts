@@ -39,12 +39,12 @@ export const isProd =
   window.location.hostname.includes("ccm-english.firebaseapp.com");
 
 // Initialize Firebase
-export const app = initializeApp(firebaseProdConfig);
-// export const app = initializeApp(
-//   // import.meta.env.VITE_PROJECT_NAME === "ccm-english" ?
-//   isProd ? firebaseProdConfig : firebaseDevConfig,
-//   // : tunisFirebaseConfig,
-// );
+// export const app = initializeApp(firebaseProdConfig);
+export const app = initializeApp(
+  //   // import.meta.env.VITE_PROJECT_NAME === "ccm-english" ?
+  isProd ? firebaseProdConfig : firebaseDevConfig,
+  //   // : tunisFirebaseConfig,
+);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 enableIndexedDbPersistence(db);
