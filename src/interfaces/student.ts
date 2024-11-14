@@ -136,7 +136,7 @@ export interface Withdraw {
 
 export type Level = "PL1" | "L1" | "L2" | "L3" | "L4" | "L5" | "L5 GRAD";
 
-export type GenderedLevel = Level | ("PL1-M" | "PL1-W" | "L1-M" | "L1-W" | "L2-M" | "L2-W");
+export type GenderedLevel = "PL1-M" | "PL1-W" | "L1-M" | "L1-W" | "L2-M" | "L2-W" | "L3" | "L4" | "L5" | "L5 GRAD";
 
 export type LevelPlus = Level | ("PL1+" | "L1-" | "L1+" | "L2-" | "L2+" | "L3-" | "L3+" | "L4-" | "L4+" | "L5-");
 
@@ -264,7 +264,7 @@ export const emptyStudent: Student = {
   covidVaccine: {
     status: CovidStatus.NORPT,
   },
-  currentLevel: "PL1",
+  currentLevel: "PL1-M",
   epId: 0,
   gender: "M",
   initialSession: "",

@@ -41,9 +41,9 @@ export const isProd =
 // Initialize Firebase
 // export const app = initializeApp(firebaseProdConfig);
 export const app = initializeApp(
-  // import.meta.env.VITE_PROJECT_NAME === "ccm-english" ?
+  //   // import.meta.env.VITE_PROJECT_NAME === "ccm-english" ?
   isProd ? firebaseProdConfig : firebaseDevConfig,
-  // : tunisFirebaseConfig,
+  //   // : tunisFirebaseConfig,
 );
 export const db = getFirestore(app);
 export const storage = getStorage(app);

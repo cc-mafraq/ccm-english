@@ -1,4 +1,4 @@
-import { find, first, includes, range, some } from "lodash";
+import { find, first, includes, isEmpty, range, some } from "lodash";
 import React, { useCallback, useMemo } from "react";
 import { useAppStore, useStudentStore } from "../../hooks";
 import {
@@ -80,6 +80,10 @@ export const StudentFilter: React.FC<StudentFilterProps> = ({ anchorEl, handleCl
     return "None";
   }, []);
 
+  const placementExamFileFn = useCallback((student: Student) => {
+    return !isEmpty(student.origPlacementData.examFile);
+  }, []);
+
   const pendingPlacementFn = useCallback(
     (student: Student) => {
       return find(student.placement, (p) => {
@@ -142,6 +146,12 @@ export const StudentFilter: React.FC<StudentFilterProps> = ({ anchorEl, handleCl
       { name: "Nationality", path: "nationality", values: nationalities },
       { name: "Gender", path: "gender", values: ["Male", "Female"] },
       {
+        fn: placementExamFileFn,
+        name: "Has Placement Exam Scan",
+        path: "origPlacementData.examFile",
+        values: ["Yes", "No"],
+      },
+      {
         condition: isAdmin,
         fn: whatsAppGroupFn,
         name: "WA BC Group",
@@ -175,6 +185,7 @@ export const StudentFilter: React.FC<StudentFilterProps> = ({ anchorEl, handleCl
     isAdminOrFaculty,
     pendingAcademicRecordFn,
     students,
+    placementExamFileFn,
     whatsAppGroupFn,
     statusDetailsFn,
     sessionsAttendedFn,
