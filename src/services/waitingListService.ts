@@ -101,7 +101,11 @@ export const getWaitingListTimeStats = (
 
   const reactivatedRate =
     filter(newOutcomeEntries, (wle) => {
-      return includes(wle.placementExam, "NS") || includes(wle.placementExam, "NO RESPONSE");
+      return (
+        includes(wle.placementExam, "NS") ||
+        (includes(wle.placementExam, "NO RESPONSE") &&
+          moment(wle.transferDbDate).diff(wle.entryDate, "months") > 24)
+      );
     }).length / notWaitingLength;
 
   const numPreviousNewEligible = filter(newOutcomeEntries, (wle) => {
@@ -120,17 +124,9 @@ export const getWaitingListTimeStats = (
     return wle.highPriority !== HighPriority.NO && wle.waiting && wle.outcome === WaitlistOutcome.N;
   }).length;
 
-  const newHighPriorityRate =
-    numNewPastHighPriority /
-    filter(waitingList, (wle) => {
-      return wle.highPriority === HighPriority.PAST;
-    }).length;
-
   const numSpotsPerMonth =
     // number of spots available to non-high priority, non-reactivated entries per month
-    newStudentsPerMonth * (1 - (overallHighPriorityRate + reactivatedRate)) +
-    // number of spots expected to be taken by current high priority entries per month
-    (numHighPriority * newHighPriorityRate) / newStudentsPerMonth;
+    newStudentsPerMonth * (1 - (overallHighPriorityRate + reactivatedRate));
 
   const recentNewOutcomeNotWaitingEntries = filter(newOutcomeNotWaitingEntries, (wle) => {
     return moment(wle.entryDate, MOMENT_FORMAT).isSameOrAfter(moment("01-01-2022"));
