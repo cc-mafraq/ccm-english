@@ -40,6 +40,11 @@ import { getAllInitialSessions, sortObjectByValues } from "../services";
 ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels, Title, CategoryScale, LinearScale, BarElement);
 
 const INDENT = 3;
+const pieChartSizeProps = {
+  maxWidth: "500px",
+  minWidth: "250px",
+  width: "33%",
+};
 
 export const StatisticsPage = () => {
   const students = useStudentStore((state) => {
@@ -128,7 +133,7 @@ export const StatisticsPage = () => {
         Nationalities
       </Typography>
       <Box display="flex" flexDirection="row" marginTop="5px">
-        <Box width="500px">
+        <Box {...pieChartSizeProps}>
           <Pie
             data={{
               datasets: [
@@ -152,7 +157,7 @@ export const StatisticsPage = () => {
             }}
           />
         </Box>
-        <Box width="500px">
+        <Box {...pieChartSizeProps}>
           <Pie
             data={{
               datasets: [
@@ -181,7 +186,7 @@ export const StatisticsPage = () => {
         Levels
       </Typography>
       <Box display="flex" flexDirection="row">
-        <Box width="500px">
+        <Box {...pieChartSizeProps}>
           <Pie
             data={{
               datasets: [
@@ -211,7 +216,7 @@ export const StatisticsPage = () => {
             }}
           />
         </Box>
-        <Box width="500px">
+        <Box {...pieChartSizeProps}>
           <Pie
             data={{
               datasets: [
@@ -246,7 +251,7 @@ export const StatisticsPage = () => {
         Gender
       </Typography>
       <Box display="flex" flexDirection="row">
-        <Box width="500px">
+        <Box {...pieChartSizeProps}>
           <Pie
             data={{
               datasets: [
@@ -262,7 +267,7 @@ export const StatisticsPage = () => {
             }}
           />
         </Box>
-        <Box width="500px">
+        <Box {...pieChartSizeProps}>
           <Pie
             data={{
               datasets: [
@@ -283,7 +288,7 @@ export const StatisticsPage = () => {
         Sessions Completed
       </Typography>
       <Box display="flex" flexDirection="row">
-        <Box width="500px">
+        <Box {...pieChartSizeProps}>
           <Pie
             data={{
               datasets: [
@@ -307,7 +312,7 @@ export const StatisticsPage = () => {
             }}
           />
         </Box>
-        <Box width="500px">
+        <Box {...pieChartSizeProps}>
           <Pie
             data={{
               datasets: [
@@ -336,7 +341,7 @@ export const StatisticsPage = () => {
         Active Student Status
       </Typography>
       <Box display="flex" flexDirection="row">
-        <Box width="500px">
+        <Box {...pieChartSizeProps}>
           <Pie
             data={{
               datasets: [
@@ -352,7 +357,7 @@ export const StatisticsPage = () => {
             }}
           />
         </Box>
-        <Box width="550px">
+        <Box {...pieChartSizeProps}>
           <Pie
             data={{
               datasets: [
@@ -400,7 +405,7 @@ export const StatisticsPage = () => {
         Initial Sessions
       </Typography>
       <Box display="flex" flexDirection="row">
-        <Box width="33%">
+        <Box {...pieChartSizeProps}>
           <Pie
             data={{
               datasets: [
@@ -455,7 +460,7 @@ export const StatisticsPage = () => {
         Overall Results
       </Typography>
       <Box display="flex" flexDirection="row" flexWrap="wrap">
-        <Box width="33%">
+        <Box {...pieChartSizeProps}>
           <Pie
             data={{
               datasets: [
@@ -548,7 +553,7 @@ export const StatisticsPage = () => {
       <Typography variant="h5" {...textProps} marginLeft="3%">
         Original Placement Levels
       </Typography>
-      <Box width="500px">
+      <Box {...pieChartSizeProps}>
         <Pie
           data={{
             datasets: [
@@ -638,15 +643,16 @@ export const StatisticsPage = () => {
       </Box>
       <Box display="flex" flexDirection="row" flexWrap="wrap">
         <LabeledNumberBox
-          color={colors[4]}
+          color={colors[6]}
+          containerProps={{ marginLeft: "10px" }}
           label="Average Age at Program Entry"
           number={Number(round(statistics.averageAge, 1).toFixed(1))}
         />
-        <LabeledNumberBox color={colors[0]} label="Teachers" number={statistics.totalTeachers} />
-        <LabeledNumberBox color={colors[1]} label="English Teachers" number={statistics.totalEnglishTeachers} />
-        <LabeledNumberBox color={colors[2]} label="Illiterate Arabic" number={statistics.totalIlliterateArabic} />
+        <LabeledNumberBox color={colors[6]} label="Teachers" number={statistics.totalTeachers} />
+        <LabeledNumberBox color={colors[6]} label="English Teachers" number={statistics.totalEnglishTeachers} />
+        <LabeledNumberBox color={colors[6]} label="Illiterate Arabic" number={statistics.totalIlliterateArabic} />
         <LabeledNumberBox
-          color={colors[3]}
+          color={colors[6]}
           label="Illiterate English"
           number={statistics.totalIlliterateEnglish}
         />

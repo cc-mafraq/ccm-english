@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { enableIndexedDbPersistence, getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 // Your web app's Firebase configuration
@@ -47,7 +47,7 @@ export const app = initializeApp(firebaseProdConfig);
 // );
 export const db = getFirestore(app);
 export const storage = getStorage(app);
-// enableIndexedDbPersistence(db);
+enableIndexedDbPersistence(db);
 
 export const studentImageFolder = "studentPics/";
 export const covidVaccineImageFolder = "vaccineCertificates/";

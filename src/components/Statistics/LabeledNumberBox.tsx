@@ -1,17 +1,26 @@
-import { Box, Typography, useTheme } from "@mui/material";
+import { Box, BoxProps, Typography, useTheme } from "@mui/material";
 import React from "react";
 
 interface LabeledNumberBoxProps {
   color: string;
+  containerProps?: BoxProps;
   label: string;
   number: number;
 }
 
-export const LabeledNumberBox: React.FC<LabeledNumberBoxProps> = ({ color, label, number }) => {
+export const LabeledNumberBox: React.FC<LabeledNumberBoxProps> = ({ color, label, number, containerProps }) => {
   const theme = useTheme();
 
   return (
-    <Box display="flex" flexDirection="column" marginLeft="4%" marginTop="1%" minWidth="150px" textAlign="center">
+    <Box
+      display="flex"
+      flexDirection="column"
+      marginLeft="4%"
+      marginTop="1%"
+      minWidth="150px"
+      textAlign="center"
+      {...containerProps}
+    >
       <Box bgcolor={color} paddingLeft={1} paddingRight={1}>
         <Typography fontSize={14}>{label}</Typography>
       </Box>
@@ -22,4 +31,8 @@ export const LabeledNumberBox: React.FC<LabeledNumberBoxProps> = ({ color, label
       </Box>
     </Box>
   );
+};
+
+LabeledNumberBox.defaultProps = {
+  containerProps: undefined,
 };
