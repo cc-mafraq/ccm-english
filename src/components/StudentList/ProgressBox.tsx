@@ -1,6 +1,6 @@
 import { useTheme } from "@mui/material";
 import { grey } from "@mui/material/colors";
-import { filter, join, last, map } from "lodash";
+import { filter, join, last, map, split } from "lodash";
 import React, { useMemo } from "react";
 import { LabeledText } from "..";
 import { useColors } from "../../hooks";
@@ -19,7 +19,7 @@ export const ProgressBox = ({
     return (
       last(
         filter(sessionResults, (sr) => {
-          return !sr.level && !sr.isAudit;
+          return !sr.isElective && !sr.isAudit;
         }),
       )?.result || last(sessionResults)?.result
     );
@@ -59,11 +59,23 @@ export const ProgressBox = ({
       }}
     >
       {join(
-        map(sessionResults, (sr) => {
-          return `${sr.session}${sr.level ? ` ${sr.level}` : ""}${sr.isAudit ? " audit" : ""}${
-            sr.result === "WD" ? " WD" : ""
-          }`;
-        }),
+        map(
+          filter(sessionResults, (sr) => {
+            return !sr.isElective;
+          }),
+          (sr) => {
+            const sessionStr = `${sr.session}${sr.isAudit ? " audit" : ""}`;
+            return sr.result === "WD"
+              ? // https://stackoverflow.com/questions/18285291/how-to-do-strike-through-string-for-javascript
+                `\u0336${join(
+                  map(split(sessionStr, ""), (char) => {
+                    return `${char}\u0336`;
+                  }),
+                  "",
+                )}`
+              : sessionStr;
+          },
+        ),
         ", ",
       )}
     </LabeledText>

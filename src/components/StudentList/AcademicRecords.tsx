@@ -10,13 +10,15 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { green as materialGreen, red as materialRed } from "@mui/material/colors";
+import { grey, green as materialGreen, red as materialRed } from "@mui/material/colors";
+import chroma from "chroma-js";
+import Color from "color";
 import { forOwn, map, reverse } from "lodash";
 import React, { useCallback, useMemo, useState } from "react";
 import { AccordionList, EditFn, FormAcademicRecordsDialog, LabeledContainer, LabeledText, ProgressBox } from "..";
 import { useAppStore, useColors, useStudentStore } from "../../hooks";
 import { AcademicRecord, FinalResult, GenderedLevel, Grade, Student } from "../../interfaces";
-import { getAllSessionsWithRecord, getProgress } from "../../services";
+import { getAllSessionsWithRecord, getProgress, isElective } from "../../services";
 
 interface AcademicRecordsProps {
   data: Student;
@@ -202,6 +204,7 @@ export const AcademicRecords: React.FC<AcademicRecordsProps> = ({ data: student 
   const [open, setOpen] = useState(false);
   const [selectedAcademicRecord, setSelectedAcademicRecord] = useState<AcademicRecord | null>(null);
   const greaterThanSmall = useMediaQuery(theme.breakpoints.up("sm"));
+  const { red, yellow, green } = useColors();
 
   const handleDialogOpen = useCallback(() => {
     setOpen(true);
@@ -229,6 +232,11 @@ export const AcademicRecords: React.FC<AcademicRecordsProps> = ({ data: student 
     });
   }, [progress]);
 
+  const getAttendanceColor = chroma.scale([red, yellow, green]);
+  const scaleAttendancePercentageForColor = (attendance: AcademicRecord["attendance"]) => {
+    return ((attendance ?? 0) / 100 - 0.4) * (1 / 0.6);
+  };
+
   return (
     <Box sx={greaterThanSmall ? { display: "flex", flexDirection: "column" } : undefined}>
       <LabeledContainer
@@ -237,6 +245,39 @@ export const AcademicRecords: React.FC<AcademicRecordsProps> = ({ data: student 
         showWhenEmpty
       >
         {PB}
+      </LabeledContainer>
+      <LabeledContainer label="Attendance Record">
+        {map(student.academicRecords, (ar) => {
+          const attendanceColor = getAttendanceColor(scaleAttendancePercentageForColor(ar.attendance)).toString();
+          return ar.attendance === undefined && ar.overallResult !== FinalResult.WD ? (
+            <></>
+          ) : (
+            <LabeledText
+              containerProps={{
+                sx: {
+                  backgroundColor: attendanceColor,
+                },
+              }}
+              label={isElective(ar.level ?? ar.levelAudited) ? `(${ar.session})` : ar.session}
+              labelProps={
+                theme.palette.mode === "dark"
+                  ? {
+                      color: Color(attendanceColor).isLight() ? grey[800] : theme.palette.text.secondary,
+                    }
+                  : {}
+              }
+              textProps={
+                theme.palette.mode === "dark"
+                  ? {
+                      color: Color(attendanceColor).isLight() ? grey[900] : theme.palette.text.secondary,
+                    }
+                  : {}
+              }
+            >
+              {ar.attendance ?? 0}%
+            </LabeledText>
+          );
+        })}
       </LabeledContainer>
       <LabeledContainer label="Academic Records" showWhenEmpty>
         {role === "admin" && (

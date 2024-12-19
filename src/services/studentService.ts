@@ -38,7 +38,7 @@ import {
   Student,
   levels,
 } from "../interfaces";
-import { getLevelAtSession } from "./fgrService";
+import { getLevelAtSession, isElective } from "./fgrService";
 
 export const JOIN_STR = ", ";
 
@@ -48,7 +48,7 @@ export type StudentProgress = {
 
 export interface SessionResult {
   isAudit?: boolean;
-  level?: string;
+  isElective?: boolean;
   result?: FinalResult;
   session?: string;
 }
@@ -102,10 +102,7 @@ export const getProgress = (student: Student, sessionOptions: string[]): Student
         level = (ar.levelAudited as Level) || ar.level;
     }
     if (!level) return;
-    const isCoreClass =
-      find(levels, (l) => {
-        return level.includes(l);
-      }) !== undefined;
+    const isCoreClass = !isElective(level);
     const electiveOrAuditLevel = first(
       filter(levels, (l) => {
         return (
@@ -119,7 +116,7 @@ export const getProgress = (student: Student, sessionOptions: string[]): Student
         : getLevelAtSession(ar.session, student, sessionOptions, true)
     ]?.push({
       isAudit: !isUndefined(ar.levelAudited) && isUndefined(ar.level),
-      level: isCoreClass ? undefined : level,
+      isElective: !isCoreClass,
       result:
         isCoreClass ||
         (!isCoreClass && (ar.overallResult === "F" || ar.overallResult === "WD" || !ar.finalGrade?.percentage))
