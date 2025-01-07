@@ -41,9 +41,12 @@ ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels, Title, CategorySc
 
 const INDENT = 3;
 const pieChartSizeProps = {
+  height: "50vh",
+  maxHeight: "500px",
   maxWidth: "500px",
+  minHeight: "350px",
   minWidth: "250px",
-  width: "33%",
+  width: "33vw",
 };
 
 export const StatisticsPage = () => {
@@ -153,6 +156,7 @@ export const StatisticsPage = () => {
               labels: [Nationality.JDN, Nationality.SYR, "Other", "Unknown"],
             }}
             options={{
+              maintainAspectRatio: false,
               plugins: chartPlugins("Active Students by Nationality"),
             }}
           />
@@ -177,6 +181,7 @@ export const StatisticsPage = () => {
               labels: [Nationality.JDN, Nationality.SYR, "Other", "Unknown"],
             }}
             options={{
+              maintainAspectRatio: false,
               plugins: chartPlugins("All Students by Nationality"),
             }}
           />
@@ -212,6 +217,7 @@ export const StatisticsPage = () => {
               }),
             }}
             options={{
+              maintainAspectRatio: false,
               plugins: chartPlugins("Active Students by Level"),
             }}
           />
@@ -242,6 +248,7 @@ export const StatisticsPage = () => {
               }),
             }}
             options={{
+              maintainAspectRatio: false,
               plugins: chartPlugins("All Students by Level"),
             }}
           />
@@ -263,6 +270,7 @@ export const StatisticsPage = () => {
               labels: ["M", "F"],
             }}
             options={{
+              maintainAspectRatio: false,
               plugins: chartPlugins("Active Students by Gender"),
             }}
           />
@@ -279,6 +287,7 @@ export const StatisticsPage = () => {
               labels: ["M", "F"],
             }}
             options={{
+              maintainAspectRatio: false,
               plugins: chartPlugins("All Students by Gender"),
             }}
           />
@@ -308,6 +317,7 @@ export const StatisticsPage = () => {
               labels: ["0 sessions", "1 session", "2 sessions", "3+ sessions"],
             }}
             options={{
+              maintainAspectRatio: false,
               plugins: chartPlugins("Active Students by Number of Sessions Completed"),
             }}
           />
@@ -332,6 +342,7 @@ export const StatisticsPage = () => {
               labels: ["0 sessions", "1 session", "2 sessions", "3+ sessions"],
             }}
             options={{
+              maintainAspectRatio: false,
               plugins: chartPlugins("All Students by Number of Sessions Completed"),
             }}
           />
@@ -353,6 +364,7 @@ export const StatisticsPage = () => {
               labels: ["RET", "NEW"],
             }}
             options={{
+              maintainAspectRatio: false,
               plugins: chartPlugins("Active Students by Status"),
             }}
           />
@@ -396,6 +408,7 @@ export const StatisticsPage = () => {
               ),
             }}
             options={{
+              maintainAspectRatio: false,
               plugins: chartPlugins("Active Students by Status Details", true),
             }}
           />
@@ -419,11 +432,12 @@ export const StatisticsPage = () => {
               labels: rangeRight(2017, moment().year() + 1),
             }}
             options={{
+              maintainAspectRatio: false,
               plugins: chartPlugins("Active Students by Initial Year"),
             }}
           />
         </Box>
-        <Box width="67%">
+        <Box height="50vh" maxHeight="500px" width="60vw">
           <Bar
             data={{
               datasets: [
@@ -437,6 +451,7 @@ export const StatisticsPage = () => {
               labels: initialSessions,
             }}
             options={{
+              maintainAspectRatio: false,
               plugins: {
                 datalabels: {
                   font: {
@@ -476,11 +491,12 @@ export const StatisticsPage = () => {
               labels: ["Pass", "Fail", "Withdraw"],
             }}
             options={{
+              maintainAspectRatio: false,
               plugins: chartPlugins("All Overall Results"),
             }}
           />
         </Box>
-        <Box width="67%">
+        <Box height="50vh" width="60vw">
           <Bar
             data={{
               datasets: [
@@ -512,6 +528,7 @@ export const StatisticsPage = () => {
               labels: genderedLevels,
             }}
             options={{
+              maintainAspectRatio: false,
               plugins: {
                 datalabels: {
                   font: {
@@ -579,6 +596,7 @@ export const StatisticsPage = () => {
             }),
           }}
           options={{
+            maintainAspectRatio: false,
             plugins: chartPlugins("Original Placement Levels"),
           }}
         />
@@ -623,6 +641,7 @@ export const StatisticsPage = () => {
             labels: keys(statistics.droppedOutReasonCounts),
           }}
           options={{
+            maintainAspectRatio: false,
             plugins: {
               datalabels: {
                 font: {

@@ -163,7 +163,7 @@ export const useStatistics = (): Statistics => {
       (prevObject, genderedLevel) => {
         prevObject[genderedLevel] = countBy(
           filter(allAcademicRecords, (ar) => {
-            return ar.level === genderedLevel;
+            return ar?.level === genderedLevel;
           }),
           "overallResult",
         ) as { [key in FinalResult]: number };
