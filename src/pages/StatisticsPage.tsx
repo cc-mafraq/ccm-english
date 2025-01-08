@@ -496,7 +496,7 @@ export const StatisticsPage = () => {
             }}
           />
         </Box>
-        <Box height="50vh" width="60vw">
+        <Box height="50vh" maxHeight="500px" width="60vw">
           <Bar
             data={{
               datasets: [
@@ -629,7 +629,7 @@ export const StatisticsPage = () => {
           </>
         );
       })}
-      <Box width="67%">
+      <Box height="50vh" maxHeight="500px" width="60vw">
         <Bar
           data={{
             datasets: [
