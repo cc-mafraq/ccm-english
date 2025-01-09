@@ -1,6 +1,6 @@
 import { cloneDeep, get, includes, indexOf, isUndefined, set } from "lodash";
 import { useState } from "react";
-import { DeepPartial, FieldValues, Path, PathValue, UseFormReturn } from "react-hook-form";
+import { DefaultValues, FieldValues, Path, PathValue, UseFormReturn } from "react-hook-form";
 import { useStudentStore } from "./useStores";
 
 export const useFormList = <T extends FieldValues>(
@@ -22,7 +22,7 @@ export const useFormList = <T extends FieldValues>(
       setList(newList);
       const resetObject = {};
       set(resetObject, listPath, []);
-      methods.reset(resetObject as T | DeepPartial<T> | undefined, { keepValues: true });
+      methods.reset(resetObject as DefaultValues<T>, { keepValues: true });
       methods.setValue(listPath as Path<T>, newList as PathValue<T, Path<T>>);
       if (includes(listPath, "phone")) {
         const subPath = includes(listPath, ".") ? listPath.substring(0, indexOf(listPath, ".") + 1) : "";

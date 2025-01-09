@@ -3,7 +3,15 @@ import { Box, Button, Dialog, DialogProps, Grid, IconButton, Tooltip, Typography
 import { green, grey } from "@mui/material/colors";
 import { isEqual } from "lodash";
 import React, { CSSProperties, PropsWithChildren, useState } from "react";
-import { DeepPartial, FieldValues, FormProvider, SubmitHandler, UseFormProps, useForm } from "react-hook-form";
+import {
+  DeepPartial,
+  DefaultValues,
+  FieldValues,
+  FormProvider,
+  SubmitHandler,
+  UseFormProps,
+  useForm,
+} from "react-hook-form";
 import { useColors } from "../../../hooks";
 import { SPACING } from "../../../services";
 import { FormErrorDialog } from "./FormErrorDialog";
@@ -43,8 +51,8 @@ export const FormDialog = <T extends FieldValues>({
 
   const [prevDefaultValues, setPrevDefaultValues] = useState<DeepPartial<T> | undefined>(undefined);
   if (open && !isEqual(useFormProps.defaultValues, prevDefaultValues)) {
-    useFormProps.defaultValues ? reset(useFormProps.defaultValues as unknown as DeepPartial<T>) : reset({} as T);
-    setPrevDefaultValues(useFormProps.defaultValues as unknown as DeepPartial<T>);
+    useFormProps.defaultValues ? reset(useFormProps.defaultValues as DefaultValues<T>) : reset({} as T);
+    setPrevDefaultValues(useFormProps.defaultValues as DefaultValues<T>);
   }
 
   return (
