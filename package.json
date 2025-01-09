@@ -34,7 +34,7 @@
     "uuid": "^11.0.4",
     "vite": "^6.0.7",
     "yup": "^0.32.11",
-    "zustand": "^4.1.4"
+    "zustand": "^5.0.3"
   },
   "devDependencies": {
     "@babel/core": "^7.18.13",
