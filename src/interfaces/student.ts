@@ -206,6 +206,7 @@ export enum DroppedOutReason {
   LLMS = "Lack of Life Management Skills",
   LT = "Lack of Transport",
   MOVE = "Moved",
+  SYR = "Returned to Syria",
   TAW = "Tawjihi",
   TC = "Time Conflict",
   UNK = "Unknown",
